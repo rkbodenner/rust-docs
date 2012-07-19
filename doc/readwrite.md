@@ -72,13 +72,12 @@ fn read_absolute_file () {
     let test_reader: reader = result::unwrap(maybe_test_reader);
     
     let mut bytes: ~[u8] = ~[];
-    while !test_reader.eof() {
+    loop {
         let byte: int = test_reader.read_byte();
         #debug("%d", byte);
+        if test_reader.eof() { break }
         vec::push(bytes, byte as u8);
     }
-
-    vec::pop(bytes); // Removes the -1 (EOF value) from the vec.
 
     assert bytes == ~[115, 117, 99, 99, 101, 115, 115];
     let maybe_success: str = str::from_bytes(bytes);
@@ -99,10 +98,11 @@ then unwrapped.
 3. Since I do not yet see a way of querying the length of a file, I will just
 read the file one byte at a time, and store it in a vector. The bytes are read
 in as an int, but str::from_bytes expects a uint. So the bytes are casted to
-their proper type.
-4. Unfortunately, the reader.eof() method returns true when the currently read
-byte is eof. The eof is given as -1 when read, due to the usage of C APIs. As
-such, I remove it.
+their proper type. This happens continously until 'end of file' is reached.
+4. The reader.eof() method returns true when the currently read
+byte is eof. If this is the case, then byte will be -1 (and thus the reason
+reader.read_byte returns an int instead of a u8) and should not be added to
+the vector. Since there is no more content, the code breaks from the loop.
 5. At this point, the entire file is read. The rest of the code is just making
 sure that the file is read properly.
 

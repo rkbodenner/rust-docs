@@ -19,17 +19,14 @@ fn read_absolute_file () {
     let test_reader: reader = result::unwrap(maybe_test_reader);
     
     let mut bytes: ~[u8] = ~[];
-    while !test_reader.eof() {
+    loop {
         let byte: int = test_reader.read_byte();
         #debug("%d", byte);
+        if test_reader.eof() { break }
         vec::push(bytes, byte as u8);
     }
 
-    vec::pop(bytes); // Removes the -1 (EOF value) from the vec.
-
     assert bytes == ~[115, 117, 99, 99, 101, 115, 115];
-
     let maybe_success: str = str::from_bytes(bytes);
-
     assert maybe_success == "success";
 }
