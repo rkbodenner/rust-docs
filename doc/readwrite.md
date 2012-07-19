@@ -106,6 +106,18 @@ the vector. Since there is no more content, the code breaks from the loop.
 5. At this point, the entire file is read. The rest of the code is just making
 sure that the file is read properly.
 
+Due to the way reader.eof() works, using a while loop checking for eof will
+cause an extra byte of value -1 to be appended to the vector. To get around
+that, use the code above, or pop the element after the loop.
+
+~~~~
+let mut bytes: ~[u8] = ~[];
+while !reader.eof() {
+    vec::push(bytes, reader.read_byte() as u8);
+}
+vec::pop(bytes);
+~~~~
+
 ## References
 
 1. http://dl.rust-lang.org/doc/0.3/core/io.html
