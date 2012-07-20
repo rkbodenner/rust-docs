@@ -39,38 +39,43 @@ The result type appears to be Rust's solution to runtime errors. A result is
 an enum of either ok(T) or err(U). Results must be unpacked before they are
 used, but for the programs on this page, I will first assert that they are ok.
 
-The following two functions will be used from core::result(2).
+The following three functions will be used from core::result(2).
 
-1. is_ok<T, E>(result<T, E>) -> bool: True iff result<T, E> is ok(T).
+1. is_err<T, E>(result<T, E>) -> bool: True iff result<T, E> is err(E).
 2. unpack<T, E>(result<T, E>) -> T: Return T in ok(T) if result is ok(T).
 Otherwise, fails.
 
 More functions, including methods for chaining and iterating can be found in
 the module. They will not be used here.
 
-## An Initial Program
+## Testing
+
+The code shown here are all tests, or helper functions for tests. As such,
+assertions will test for expected results of running the test. The tests are
+also written expecting that the program is at /home/havvy and that there is a
+file test.txt containing the contents "success" in the same directory.
+
+The io and result functions, traits, and types are imported in the header.
+
+### Reading Files
+
+To begin, let us read bytes from test.txt.
+
+## The Testing Function
 
 ~~~~
-use std;
-
-import io::file_writer;
-import io::file_reader;
-import io::reader;
-import io::writer;
-import result::result;
-
-#[test]
-#[doc="I created a file at /home/havvy/test.txt with the following contents:
-
-'success'
-"]
-fn read_absolute_file () {
-    let path: str = "/home/havvy/test.txt";
+fn is_success (-path: str) {
+    // [1]
     let maybe_test_reader: result<reader, str> = file_reader(path);
 
-    assert result::is_ok::<reader, str>(maybe_test_reader);
+    // [2]
+    if is_err::<reader, str>(maybe_test_reader) {
+        io::println(result::get_err(maybe_test_reader));
+        assert false;
+    }
     let test_reader: reader = result::unwrap(maybe_test_reader);
     
+    // [3] [4]
     let mut bytes: ~[u8] = ~[];
     loop {
         let byte: int = test_reader.read_byte();
@@ -79,36 +84,36 @@ fn read_absolute_file () {
         vec::push(bytes, byte as u8);
     }
 
+    // [5]
     assert bytes == ~[115, 117, 99, 99, 101, 115, 115];
     let maybe_success: str = str::from_bytes(bytes);
     assert maybe_success == "success";
 }
 ~~~~
 
-Sorry for all the imports. I wrote this program as a test, and got it to pass.
-Here's the process used for reading the file:
-
-1. Create a file_reader passing it an absolute path. The path leads to a file
-I put in my home directory called test.txt with the contents 'success' encoded
-in ascii.
-2. file_reader doesn't give us a reader right away. I assert that the result
-is okay, and if it isn't, let the program die. I could have just left this to
-unwrap, but wanted to catch the error on my program line. The file_reader is
-then unwrapped.
+1. The function tries to creates a file_reader using the path given to it.
+2. If the file_reader call failed, print why and then fail the test.
+Otherwise, unwrap the result.
 3. Since I do not yet see a way of querying the length of a file, I will just
 read the file one byte at a time, and store it in a vector. The bytes are read
-in as an int, but str::from_bytes expects a uint. So the bytes are casted to
-their proper type. This happens continously until 'end of file' is reached.
+in as an int, but str::from_bytes expects a uint. So each byte is casted to
+a uint. This happens continously until 'end of file' is reached.
 4. The reader.eof() method returns true when the currently read
 byte is eof. If this is the case, then byte will be -1 (and thus the reason
-reader.read_byte returns an int instead of a u8) and should not be added to
-the vector. Since there is no more content, the code breaks from the loop.
-5. At this point, the entire file is read. The rest of the code is just making
-sure that the file is read properly.
+reader.read_byte returns an int instead of a u8) which should not be added to
+the vector. Since this is the EOF, the code breaks from the loop.
+5. At this point, the assertions that the file contains the correct contents
+is checked twice. Once in byte form, and then again as a string. The byte form
+is the ASCII values (and thus, UTF8 values) for 'success'.
 
-Due to the way reader.eof() works, using a while loop checking for eof will
-cause an extra byte of value -1 to be appended to the vector. To get around
-that, use the code above, or pop the element after the loop.
+### Why not a while loop?
+
+You might be asking, why am I checking to exit the loop from inside the loop
+and not having a check between iterations.
+
+This is due to the way reader.eof() works. Using a while loop checking for eof 
+will cause the EOF byte of value -1 (255u8) to be appended to the vector. The
+final value has to be popped off when using a while loop.
 
 ~~~~
 let mut bytes: ~[u8] = ~[];
@@ -117,6 +122,51 @@ while !reader.eof() {
 }
 vec::pop(bytes);
 ~~~~
+
+### Absolute Path
+
+This test will work when the program is ran from anywhere as long as test.txt
+exists in the specified location. 
+
+An absolute URL begins with the root directory, '/'.
+
+~~~~
+#[test]
+fn read_absolute_file () {
+    is_success("/home/havvy/test.txt");
+}
+~~~~
+
+### Relative Path
+
+A relative path is any path that does not begin with the root directory. The
+path starts from the directory the program is called from. For example, if the
+program is called from /home/havvy/, then a path of test.txt will read from
+/home/havvy/test.txt.
+
+Directories named '.' and '..' has special meaning. '.' will go to the current
+directory, while '..' goes one directory up.
+
+The paths test.txt and ./test.txt are equivelent. The following two tests will
+either both pass or both fail, depending on whether or not the file exists in
+the directory the program is ran from and whether or not the file contains the
+contents "success".
+
+~~~~
+#[test]
+fn read_relative_file () {
+    is_success("./test.txt");
+}
+
+#[test]
+fn read_relative_file_2 () {
+    is_success("test.txt");
+}
+~~~~
+
+## Writing Files
+
+
 
 ## References
 
