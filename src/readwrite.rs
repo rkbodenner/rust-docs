@@ -33,15 +33,15 @@ fn is_success (-path: str) {
 
 #[test]
 fn read_absolute_file () {
-    is_success("/home/havvy/test.txt");
+    is_success("/home/havvy/read.txt");
 }
 
 #[test]
 fn read_relative_file () {
-    is_success("./test.txt");
+    is_success("./read.txt");
 }
 
 #[test]
 fn read_relative_file_2 () {
-    is_success("test.txt");
+    is_success("read.txt");
 }

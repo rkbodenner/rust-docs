@@ -53,7 +53,7 @@ the module. They will not be used here.
 The code shown here are all tests, or helper functions for tests. As such,
 assertions will test for expected results of running the test. The tests are
 also written expecting that the program is at /home/havvy and that there is a
-file test.txt containing the contents "success" in the same directory.
+file read.txt containing the contents "success" in the same directory.
 
 The io and result functions, traits, and types are imported in the header.
 
@@ -133,7 +133,7 @@ An absolute URL begins with the root directory, '/'.
 ~~~~
 #[test]
 fn read_absolute_file () {
-    is_success("/home/havvy/test.txt");
+    is_success("/home/havvy/read.txt");
 }
 ~~~~
 
@@ -155,18 +155,22 @@ contents "success".
 ~~~~
 #[test]
 fn read_relative_file () {
-    is_success("./test.txt");
+    is_success("./read.txt");
 }
 
 #[test]
 fn read_relative_file_2 () {
-    is_success("test.txt");
+    is_success("read.txt");
 }
 ~~~~
 
 ## Writing Files
 
+Writing files is slightly harder, since we need to undo any changes that are
+made afterwards. As such, the first test will write a few bytes, and the next
+test will then remove those bytes.
 
+The file being worked on will be /home/havvy/write.txt
 
 ## References
 
